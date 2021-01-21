@@ -1,0 +1,26 @@
+
+class db_connectors:
+    def __init__(self, connector):
+        self.connector = connector
+
+    def snowflake_conector(self, user, password, account):
+        import snowflake.connector
+        ctx = snowflake.connector.connect(
+            user=user,
+            password=password,
+            account=account
+        )
+
+        return ctx
+
+    def bigquery_connector(self, credentials_json, dryRun, use_query_cache):
+        from google.cloud import bigquery
+        from google.oauth2 import service_account
+        credentials = service_account.Credentials.from_service_account_file(credentials_json)
+        client = bigquery.Client(credentials=credentials, project=self.project_id)
+        job_config = bigquery.QueryJobConfig(dry_run=dryRun, use_query_cache=use_query_cache, autodetect=True)
+        return client, job_config
+
+    def greenplum_connector(self):
+
+

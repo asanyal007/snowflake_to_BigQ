@@ -1,0 +1,11 @@
+Steps to follow before setting up Cluster
+1. Cluster is Debian 1.3 image
+2. "spark.jars.packages" are "net.snowflake:snowflake-jdbc:3.12.12,net.snowflake:spark-snowflake_2.11:2.8.2-spark_2.3,com.google.cloud.spark:spark-bigquery-with-dependencies_2.11:0.18.0,io.delta:delta-core_2.11:0.4.0"
+3. Install pip install --upgrade snowflake-connector-python  pip install gcsfs
+
+Updates in BigQuery:
+1. Run the DDL
+CREATE or REPLACE TABLE Logs.run_log3(dataset	STRING, table	STRING, status STRING, start TIMESTAMP, Finish STRING)
+
+
+
