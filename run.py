@@ -10,9 +10,9 @@ path = "dataproc-staging-us-central1-607396110715-zl7fbquj"
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"]="onyx-sequencer-297412-67e580bc8161.json"
 
 # Snowlake info
-user = 'ARITRA123'
+user = 'INDIKA123'
 password = 'Nq1dRuaV'
-account = 'xp53817.us-central1.gcp'
+account = 'cz87434.us-central1.gcp'
 databse = 'SNOWFLAKE_SAMPLE_DATA'
 
 dict_info = [user,password, account, databse]
