@@ -53,7 +53,7 @@ class CreateLakes:
 
 spark = SparkSession \
     .builder \
-    .appName("DataMogration") \
+    .appName("DataMigration") \
     .getOrCreate()
 bucket = path
 spark.conf.set('temporaryGcsBucket', bucket)
