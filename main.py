@@ -71,16 +71,18 @@ def create_table(user, password, account, database, project, path):
     df_schema_bigQ = df_schema.replace({"Dtype": data_types, "Isnull": mode})
 
     # # Create all the datasets
-
+    fs = gcsfs.GCSFileSystem(project=project)
+    with fs.open('gs://{}/map.csv'.format(path)) as f:
+        Tables_to_create = pd.read_csv(f)
     done = []
     client = bigquery.Client()
     for d in set(df_schema_bigQ['Schema']):
-        if d not in done:
+        if d not in done and d in list(Tables_to_create['Schema']):
             dataset_id = "{}.{}".format(client.project, d)
             dataset = bigquery.Dataset(dataset_id)
             dataset = client.create_dataset(dataset, exists_ok=True)
-        done.append(d)
-        print("Created Dataset {}".format(dataset_id))
+            done.append(d)
+            print("Created Dataset {}".format(dataset_id))
 
     df_schema_bigQ['concat'] = df_schema_bigQ[['cols', 'Dtype', 'Isnull']].apply(lambda x: ' '.join(x), axis=1)
 
@@ -92,37 +94,39 @@ def create_table(user, password, account, database, project, path):
     done = []
     for schema in df['Schema']:
         for table in df[df['Schema'] == schema]['tables']:
-            if table in Tables_to_create['SourceTab'].values and "{}.{}".format(schema, table) not in done:
-                table_id = "{}.{}".format(schema, table)
-                columns = str(df[(df['Schema'] == schema) & (df['tables'] == table)]['concat'].values[0])
-                partition_col = Tables_to_create[Tables_to_create['SourceTab']==table]['ParitionCol'].values[0]
-                DDL_Partition = "CREATE OR REPLACE TABLE {table_id} ({columns}) PARTITION BY {partition_col}".format(
-                    table_id=table_id, columns=columns, partition_col=partition_col)
-                DDL = "CREATE OR REPLACE TABLE {table_id} ({columns})".format(table_id=table_id, columns=columns)
-                print(DDL)
-                if not str(partition_col) == 'nan':
-                    try:
-                        query_job = client.query(DDL_Partition)
-                        results = query_job.result()
-                    except ClientError as err:
-                        error_dic = err.__dict__['_errors']
-                        errors = error_dic[0]['message']
-                        print(errors)
-                    print("Created {} with partition on {}".format(table_id, partition_col))
-                    if "{}.{}".format(schema, table) not in done:
-                        done.append("{}.{}".format(schema, table))
-                else:
-                    try:
-                        query_job = client.query(DDL)
-                        results = query_job.result()
-                    except ClientError as err:
-                        error_dic = err.__dict__['_errors']
-                        errors = error_dic[0]['message']
-                        print(errors)
-                    if "{}.{}".format(schema, table) not in done:
-                        done.append("{}.{}".format(schema, table))
-            else:
-                print("Skipped {}".format(table))
+            for index, row in Tables_to_create.iterrows():
+                if schema == row['Schema'] and table== row['SourceTab']:
+                    if table in Tables_to_create['SourceTab'].values and "{}.{}".format(schema, table) not in done:
+                        table_id = "{}.{}".format(schema, table)
+                        columns = str(df[(df['Schema'] == schema) & (df['tables'] == table)]['concat'].values[0])
+                        partition_col = Tables_to_create[Tables_to_create['SourceTab']==table]['ParitionCol'].values[0]
+                        DDL_Partition = "CREATE OR REPLACE TABLE {table_id} ({columns}) PARTITION BY {partition_col}".format(
+                            table_id=table_id, columns=columns, partition_col=partition_col)
+                        DDL = "CREATE OR REPLACE TABLE {table_id} ({columns})".format(table_id=table_id, columns=columns)
+                        print(DDL)
+                        if not str(partition_col) == 'nan':
+                            try:
+                                query_job = client.query(DDL_Partition)
+                                results = query_job.result()
+                            except ClientError as err:
+                                error_dic = err.__dict__['_errors']
+                                errors = error_dic[0]['message']
+                                print(errors)
+                            print("Created {} with partition on {}".format(table_id, partition_col))
+                            if "{}.{}".format(schema, table) not in done:
+                                done.append("{}.{}".format(schema, table))
+                        else:
+                            try:
+                                query_job = client.query(DDL)
+                                results = query_job.result()
+                            except ClientError as err:
+                                error_dic = err.__dict__['_errors']
+                                errors = error_dic[0]['message']
+                                print(errors)
+                            if "{}.{}".format(schema, table) not in done:
+                                done.append("{}.{}".format(schema, table))
+                    else:
+                        print("Skipped {}".format(table))
 
 
 

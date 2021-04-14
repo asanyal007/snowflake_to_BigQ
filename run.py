@@ -3,16 +3,16 @@ import os
 from google.cloud import storage
 
 # GCP info
-project_id= "onyx-sequencer-297412"
+project_id= "gothic-sled-306606"
 region = "us-central1"
-cluster_name = "cluster-9bde"
-path = "dataproc-staging-us-central1-607396110715-zl7fbquj"
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"]="onyx-sequencer-297412-67e580bc8161.json"
+cluster_name = "cluster-0503"
+path = "dataproc-staging-us-central1-780791141010-l5dhlhuq"
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"]="gothic-sled-306606-7cab126977a1.json"
 
 # Snowlake info
-user = 'INDIKA123'
+user = 'WNS123'
 password = 'Nq1dRuaV'
-account = 'cz87434.us-central1.gcp'
+account = 'dt21316.us-central1.gcp'
 databse = 'SNOWFLAKE_SAMPLE_DATA'
 
 dict_info = [user,password, account, databse]
@@ -32,8 +32,9 @@ blob3.upload_from_filename('map.csv')
 
 
 # Calling Job
-job = '2'
-Data_proc.submit_job(project_id, region, cluster_name, path, filename1, filename2, job, path, project_id, dict_info)
+job = ['1', '2']
+for j in job:
+    Data_proc.submit_job(project_id, region, cluster_name, path, filename1, filename2, j, path, project_id, dict_info)
 
 
 blob2.delete()

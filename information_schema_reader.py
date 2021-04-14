@@ -29,3 +29,12 @@ class information_schema:
         info = data_injector.reader.read_mssql(spark, server,database, username, password, table_name="INFORMATION_SCHEMA.COLUMNS" )
         return info
 
+
+if __name__=='__main__':
+    user = 'INDIKA123'
+    password = 'Nq1dRuaV'
+    account = 'cz87434.us-central1.gcp'
+    databse = 'SNOWFLAKE_SAMPLE_DATA'
+    info = information_schema.snowflake_info(databse=databse, user=user, password=password, account=account)
+    print(info)
+

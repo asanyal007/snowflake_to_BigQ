@@ -66,7 +66,7 @@ options = {
     "sfWarehouse": "COMPUTE_WH"
 }
 
-fs = gcsfs.GCSFileSystem(project='onyx-sequencer-297412')
+fs = gcsfs.GCSFileSystem(project=project)
 with fs.open('gs://{}/map.csv'.format(path)) as f:
     Tables_to_create = pd.read_csv(f)
 
@@ -75,9 +75,9 @@ logging.basicConfig(filename='run.log', level=logging.INFO)
 
 
 ctx = snowflake.connector.connect(
-    user='ARITRA123',
-    password='Nq1dRuaV',
-    account='xp53817.us-central1.gcp'
+    user= user,
+    password=password,
+    account= account
 )
 
 
@@ -120,12 +120,12 @@ def create_log(dataset, table):
 def update_log(dataset, table, status, start, source_count, target_count, total_unmatched_rows, Finish):
     client = bigquery.Client()
     dml_statement = (
-            "UPDATE Logs.run_log3 ".format(dataset=dataset, table=table)
+            "UPDATE `gothic-sled-306606.Logs.run_log3` ".format(dataset=dataset, table=table)
             + "SET status = '{status}', ".format(status=status)
             + "start = '{start}', ".format(start=start)
-            + "source_count = {source_count}, ".format(source_count = source_count)
-            + "target_count = {target_count}, ".format(target_count = target_count)
-            + "total_unmatched_rows ={total_unmatched_rows}, ".format(total_unmatched_rows = total_unmatched_rows)
+            + "source_count = '{source_count}', ".format(source_count = source_count)
+            + "target_count = '{target_count}', ".format(target_count = target_count)
+            + "total_unmatched_rows ='{total_unmatched_rows}', ".format(total_unmatched_rows = total_unmatched_rows)
             + "Finish = '{Finish}' ".format(Finish=Finish)
             + "WHERE dataset = '{dataset}' and table = '{table}'".format(dataset=dataset, table=table))
     print(dml_statement)
@@ -133,7 +133,7 @@ def update_log(dataset, table, status, start, source_count, target_count, total_
 
 
 cs = ctx.cursor()
-cs.execute('USE DATABASE {database};'.format(database=database))
+cs.execute('USE DATABASE {database};'.format(database=databse))
 cs.execute(sql_cols)
 tables_columns = cs.fetchall()
 
@@ -141,13 +141,16 @@ tables_columns = cs.fetchall()
 
 def parameterize(df_schema):
     args = []
-    for schema in df_schema['Schema']:
+    '''for schema in df_schema['Schema']:
         for table in df_schema[df_schema['Schema'] == schema]['tables']:
-            if table in Tables_to_create['SourceTab'].values:
-                args.append((schema, table))
+            if table in Tables_to_create['SourceTab'].values and schema in Tables_to_create['Schema'].values:
+                args.append((schema, table))'''
+    for index, row in Tables_to_create.iterrows():
+        args.append((row['Schema'], row['SourceTab']))
     return args
 
 df_log = spark.read.format("bigquery").option('table', '{}:Logs.run_log3'.format(project)).load()
+
 if df_log.count() > 0:
     df_rerun = pd.DataFrame()
     # Check if Log exists
@@ -183,7 +186,7 @@ def data_transfer(val):
     update_log(dataset=val[0], table=val[1], status='L', start=start, source_count=df.count(), target_count=0,
                total_unmatched_rows=0, Finish=0)
 
-    df.coalesce(100).write.format('bigquery').option('table', '{}:{}.{}'.format(project, str(val[0]),
+    df.write.format('bigquery').option('table', '{}:{}.{}'.format(project, str(val[0]),
                                                                                                     str(val[1]))).mode(
         "append").save()
     df_bigq = spark.read.format("bigquery").option('table', '{}:{}.{}'.format(project, str(val[0]),
@@ -205,7 +208,7 @@ def data_transfer(val):
 
 
 if __name__ == "__main__":
-    thread_pool = ThreadPool(2)
+    thread_pool = ThreadPool(4)
     thread_pool.map(data_transfer, list(set(args)))
 
 
